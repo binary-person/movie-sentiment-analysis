@@ -1,5 +1,5 @@
 # Movie Sentiment Analysis
-To run sentiment analysis API server: [API example](https://sentiment-analysis-api-sc.herokuapp.com)
+To host a sentiment analysis API server: [API example](https://sentiment-analysis-api-sc.herokuapp.com)
 ```
 python3 web.py
 # Will be accessible through http://localhost:8080
