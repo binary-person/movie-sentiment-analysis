@@ -1,0 +1,112 @@
+<html>
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+    </head>
+    <body style="text-align: center">
+        <h1 id='progress'>Loading</h1>
+        <h4 hidden>By Simon Cheng</h4>
+        <p style="font-size: 140%" hidden>
+            <br>
+            <span>Prediction: Enter some words</span>
+            <br>
+            <span>Confidence: Enter some words</span>
+            <br>
+            <span>Unknown words: None</span>
+        </p>
+        <br>
+        <b style="font-size: 140%" hidden>Your input here:</b><br>
+        <div contenteditable id='inputText' style="font-size: 240%; border: grey solid 2px; border-radius: 20px; width: 50%; transform: translate(50%)" hidden></div>
+        <script>
+            var tf = tf, fetch = fetch; // for cloud9
+            var model, char2idx;
+            
+            function updateProgress(text){
+                document.getElementById('progress').innerHTML = text;
+            }
+            function updateUnknownWords(array){
+                if(array.length == 0){
+                    document.getElementsByTagName('span')[2].innerHTML = 'Unknown words: None';
+                }else{
+                    document.getElementsByTagName('span')[2].innerHTML = 'Unknown words: '+array.join(', ');
+                }
+            }
+            function updatePrediction(text){
+                document.getElementsByTagName('span')[0].innerHTML = 'Prediction: '+text;
+            }
+            function updateConfidence(value){
+                document.getElementsByTagName('span')[1].innerHTML = 'Confidence: '+value;
+            }
+            
+            function preprocessText(text){
+                // remove number
+                text = text.replace(/\d+/g, ' ');
+                // remove single character
+                text = text.replace(/\b[a-zA-Z]\b/g, ' ');
+                // remove bracket
+                text = text.replace(/\W/g, ' ');
+                // remove extra white space
+                text = text.replace(/\s+/g, ' ');
+                return text.trim().toLowerCase();
+            }
+            
+            async function predict(text){
+                text = preprocessText(text);
+                if(text.length === 0){
+                    updatePrediction('Enter some words');
+                    updateConfidence('Enter some words');
+                    updateUnknownWords([]);
+                    return;
+                }
+                
+                var vectorizedInput = [];
+                var unknownWords = [];
+                for(var word of text.split(' ')){
+                    var numRep = char2idx[word];
+                    if(numRep === undefined){
+                        unknownWords.push(word);
+                    }else{
+                        vectorizedInput.push(numRep);
+                    }
+                }
+                if(unknownWords.length == 0){
+                    updateUnknownWords([]);
+                    var prediction = (await model.predict(tf.tensor([vectorizedInput]))).dataSync()[0];
+                    if(prediction > 0.5){
+                        updatePrediction('Positive review');
+                        updateConfidence((prediction*100).toFixed(3)+'%');
+                    }else{
+                        updatePrediction('Negative review');
+                        updateConfidence(((1-prediction)*100).toFixed(3)+'%');
+                    }
+                }else{
+                    updatePrediction('Please remove unknown words first');
+                    updateConfidence('Please remove unknown words first');
+                    updateUnknownWords(unknownWords);
+                }
+                
+            }
+            
+            function afterLoading(){
+                document.getElementsByTagName('p')[0].removeAttribute('hidden');
+                document.getElementById('inputText').removeAttribute('hidden');
+                document.getElementsByTagName('h4')[0].removeAttribute('hidden');
+                document.getElementsByTagName('b')[0].removeAttribute('hidden');
+                
+                document.getElementById('inputText').addEventListener('keyup', function(){
+                    predict(this.innerText);
+                });
+            }
+            
+            async function initialize(){
+                updateProgress('Loading model...');
+                model = await tf.loadLayersModel('sentiment_model/model.json');
+                updateProgress('Loading dictionary for vectorization...');
+                char2idx = eval('('+await (await fetch('dictionary.json')).text()+')');
+                
+                updateProgress('Welcome to sentiment analysis for movie reviews');
+                afterLoading();
+            }
+            initialize();
+        </script>
+    </body>
+</html>

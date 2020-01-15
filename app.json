@@ -1,0 +1,14 @@
+{
+  "name": "Sentiment Analysis",
+  "description": "Self explanatory.",
+  "image": "heroku/python",
+  "keywords": ["python", "tensorflow" ],
+  },
+  "environments": {
+    "test": {
+      "scripts": {
+        "test": "python web.py"
+      }
+    }
+  }
+}
